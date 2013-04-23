@@ -54,18 +54,27 @@ var $objectName = 'Lead';
  */
 public function getDuplicateQuery($focus, $prefix='')
 {
-	$query = "SELECT id, first_name, last_name, account_name, title FROM leads ";
+	
+	// $focus->add_team_security_where_clause($query); lead the query to fail because field id is ambigous as
+	// it's contained in both teams and leads tables
+	// proposed changes as follows:
+	
+	$query = "SELECT leads.id, leads.first_name, leads.last_name, leads.account_name, leads.title FROM leads ";
 
     // Bug #46427 : Records from other Teams shown on Potential Duplicate Contacts screen during Lead Conversion
     // add team security
+    if( !empty($focus) && !$focus->disable_row_level_security )
+    {
+        $focus->add_team_security_where_clause($query);
+    }
 
-    $query .= " WHERE deleted != 1 AND (status <> 'Converted' OR status IS NULL) AND ";
+    $query .= " WHERE leads.deleted != 1 AND (leads.status <> 'Converted' OR leads.status IS NULL) AND ";
     
     //Use the first and last name from the $_POST to filter.  If only last name supplied use that
 	if(isset($_POST[$prefix.'first_name']) && strlen($_POST[$prefix.'first_name']) != 0 && isset($_POST[$prefix.'last_name']) && strlen($_POST[$prefix.'last_name']) != 0) {
-		$query .= " (first_name='". $_POST[$prefix.'first_name'] . "' AND last_name = '". $_POST[$prefix.'last_name'] ."')";
+		$query .= " (leads.first_name='". $_POST[$prefix.'first_name'] . "' AND leads.last_name = '". $_POST[$prefix.'last_name'] ."')";
 	} else {
-		$query .= " last_name = '". $_POST[$prefix.'last_name'] ."'";
+		$query .= " leads.last_name = '". $_POST[$prefix.'last_name'] ."'";
 	}
     return $query;
 }
